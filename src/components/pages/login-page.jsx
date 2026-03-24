@@ -261,7 +261,7 @@ export function LoginPage() {
                 Welcome Back
               </CardTitle>
               <CardDescription className="text-gray-600 text-base">
-                Sign in to the Dienst Dashboard
+                Horas! Sign in to the Dienst Dashboard
               </CardDescription>
             </CardHeader>
           </div>

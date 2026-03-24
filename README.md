@@ -1,6 +1,10 @@
 # GKIN RWDH Dienst Dashboard
 
+Hi there!
 A church service coordination platform for managing roles, assignments, and communication across weekly services.
+
+## History
+More details of the tech of GKIN history can be found here https://docs.google.com/document/d/1E_4IeMiA1qNvAZeK6LwB64CKaPWtaV6NT67uOc_bs4U/edit?usp=sharing
 
 ## Overview
 

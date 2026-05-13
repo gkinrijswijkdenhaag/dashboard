@@ -8,6 +8,7 @@ import {
   Send,
   Presentation,
   Music,
+  Megaphone,
 } from "lucide-react";
 
 export const workflowCategories = [
@@ -86,6 +87,13 @@ export const workflowCategories = [
         icon: Presentation,
         description: "Create presentation slides",
         actionLabel: "Create Slides",
+      },
+      {
+        id: "announcement",
+        name: "Announcement",
+        icon: Megaphone,
+        description: "Add announcement Google Slides link",
+        actionLabel: "Add Link",
       },
       {
         id: "music",

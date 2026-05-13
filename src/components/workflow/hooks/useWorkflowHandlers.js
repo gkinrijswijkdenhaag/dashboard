@@ -45,6 +45,7 @@ export const useWorkflowHandlers = () => {
     setIsSermonTranslationModalOpen,
     setCurrentSermon,
     setIsSlidesUploadModalOpen,
+    setIsAnnouncementModalOpen,
     setIsQrCodeModalOpen,
     setIsMusicUploadModalOpen,
     setIsEditDocumentLinkModalOpen,
@@ -409,6 +410,7 @@ export const useWorkflowHandlers = () => {
       sermon: "Sermon",
       qrcode: "QR Code",
       slides: "Presentation Slides",
+      announcement: "Announcement Slides",
       music: "Music Files",
     };
 
@@ -521,6 +523,7 @@ export const useWorkflowHandlers = () => {
       sermon: "Sermon",
       qrcode: "QR Code",
       slides: "Presentation Slides",
+      announcement: "Announcement Slides",
     };
 
     // Get the document link from the task status data
@@ -920,9 +923,54 @@ export const useWorkflowHandlers = () => {
     }
   };
 
+  const handleUploadAnnouncement = () => {
+    setIsAnnouncementModalOpen(true);
+  };
+
+  const handleAnnouncementSubmit = async (announcementData) => {
+    try {
+      setLoadingStates((prev) => ({ ...prev, announcementSubmission: true }));
+
+      const documentLink = announcementData?.documentLink;
+
+      if (!documentLink) {
+        toast.error("No announcement link provided");
+        return Promise.reject(new Error("No announcement link provided"));
+      }
+
+      const updatedAt = new Date().toISOString();
+      const userRole =
+        typeof currentUserRole === "string"
+          ? currentUserRole
+          : currentUserRole?.id || currentUserRole?.role?.id || "beamer";
+
+      await updateTaskStatus("announcement", "completed", documentLink, "beamer");
+
+      setCompletedTasks((prev) => ({
+        ...prev,
+        announcement: {
+          status: "completed",
+          documentLink: documentLink,
+          assignedTo: "beamer",
+          updatedAt: updatedAt,
+          updatedBy: userRole,
+        },
+      }));
+
+      setIsAnnouncementModalOpen(false);
+      toast.success("Announcement link has been saved successfully!");
+      return Promise.resolve();
+    } catch (error) {
+      console.error("Error saving announcement link:", error);
+      toast.error("Failed to save announcement link");
+      return Promise.reject(error);
+    } finally {
+      setLoadingStates((prev) => ({ ...prev, announcementSubmission: false }));
+    }
+  };
+
   // Handler for QR code upload submission
   const handleQrCodeUploadSubmit = async (qrCodeData) => {
-    // console.log("QR code upload submitted:", qrCodeData);
 
     // Set loading state for QR code document
     setLoadingStates((prev) => ({ ...prev, qrcodeDocument: true }));
@@ -1352,6 +1400,8 @@ export const useWorkflowHandlers = () => {
     resetSermonStatus,
     handleUploadSlides,
     handleSlidesUploadSubmit,
+    handleUploadAnnouncement,
+    handleAnnouncementSubmit,
     handleQrCodeUploadSubmit,
     handleUploadMusic,
     handleMusicUploadSubmit,

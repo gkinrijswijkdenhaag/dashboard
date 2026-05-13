@@ -8,6 +8,7 @@ import { TranslationModal } from "../../modals/translation-modal";
 import { ViewTranslatedLyricsModal } from "../../modals/view-translated-lyrics-modal";
 import { SermonTranslationModal } from "../../modals/sermon-translation-modal";
 import { SlidesUploadModal } from "../../modals/slides-upload-modal";
+import { AnnouncementLinkModal } from "../../modals/announcement-link-modal";
 import { QrCodeUploadModal } from "../../modals/qr-code-upload-modal";
 import { MusicUploadModal } from "../../modals/music-upload-modal";
 import { EditDocumentLinkModal } from "./EditDocumentLinkModal";
@@ -47,6 +48,8 @@ export const ModalManager = () => {
     currentSermon,
     isSlidesUploadModalOpen,
     setIsSlidesUploadModalOpen,
+    isAnnouncementModalOpen,
+    setIsAnnouncementModalOpen,
     isQrCodeModalOpen,
     setIsQrCodeModalOpen,
     completedTasks,
@@ -79,6 +82,7 @@ export const ModalManager = () => {
     handleTranslationSubmit,
     handleSermonTranslationSubmit,
     handleSlidesUploadSubmit,
+    handleAnnouncementSubmit,
     handleQrCodeUploadSubmit,
     handleMusicUploadSubmit,
     handleSaveDocumentLink,
@@ -152,6 +156,13 @@ export const ModalManager = () => {
         isOpen={isSlidesUploadModalOpen}
         onClose={() => setIsSlidesUploadModalOpen(false)}
         onSubmit={handleSlidesUploadSubmit}
+        dateString={dateString}
+      />
+
+      <AnnouncementLinkModal
+        isOpen={isAnnouncementModalOpen}
+        onClose={() => setIsAnnouncementModalOpen(false)}
+        onSubmit={handleAnnouncementSubmit}
         dateString={dateString}
       />
 

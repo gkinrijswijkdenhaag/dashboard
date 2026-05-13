@@ -68,6 +68,7 @@ export const WorkflowProvider = ({
     useState(false);
   const [currentSermon, setCurrentSermon] = useState(null);
   const [isSlidesUploadModalOpen, setIsSlidesUploadModalOpen] = useState(false);
+  const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
   const [isQrCodeModalOpen, setIsQrCodeModalOpen] = useState(false);
   const [isMusicUploadModalOpen, setIsMusicUploadModalOpen] = useState(false);
   const [isEditDocumentLinkModalOpen, setIsEditDocumentLinkModalOpen] =
@@ -511,6 +512,8 @@ export const WorkflowProvider = ({
     setCurrentSermon,
     isSlidesUploadModalOpen,
     setIsSlidesUploadModalOpen,
+    isAnnouncementModalOpen,
+    setIsAnnouncementModalOpen,
     isQrCodeModalOpen,
     setIsQrCodeModalOpen,
     isMusicUploadModalOpen,

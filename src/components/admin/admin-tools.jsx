@@ -35,8 +35,24 @@ import emailSettingsService from "../../services/emailSettingsService";
 import { useNotifications } from "../../context/NotificationContext";
 import { PasscodeManager } from "./passcode-manager";
 import { RoleBasedPeopleManager } from "./role-based-people-manager";
+import { DefaultRolesManager } from "./default-roles-manager";
 import { RoleEmailManager } from "./role-email-manager";
 import { Link } from "react-router-dom";
+
+/**
+ * Wrapper that keeps default roles state shared between
+ * DefaultRolesManager and RoleBasedPeopleManager
+ */
+function ServiceAssignmentsTab() {
+  const [roleNames, setRoleNames] = useState(null);
+
+  return (
+    <div className="space-y-8">
+      <DefaultRolesManager onRolesChange={setRoleNames} />
+      <RoleBasedPeopleManager roles={roleNames} />
+    </div>
+  );
+}
 
 /**
  * Admin Tools component for administrative operations
@@ -553,7 +569,7 @@ export function AdminTools() {
 
   // Render the People tab content
   const renderPeopleTab = () => {
-    return <RoleBasedPeopleManager />;
+    return <ServiceAssignmentsTab />;
   };
 
   // Render the Role Emails tab content

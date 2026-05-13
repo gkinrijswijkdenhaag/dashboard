@@ -69,6 +69,10 @@ async function initializeDatabase() {
       path.join(__dirname, "role_emails_schema.sql"),
       "utf8"
     );
+    const defaultRolesSchemaSQL = fs.readFileSync(
+      path.join(__dirname, "default_roles_schema.sql"),
+      "utf8"
+    );
 
     // Execute schema SQL with logging using the same client
     console.log("Creating base schema...");
@@ -158,7 +162,14 @@ async function initializeDatabase() {
       console.log("Role emails table initialized successfully");
     } catch (error) {
       console.warn("Role emails table initialization warning:", error.message);
-      // Continue execution as this might be due to existing objects
+    }
+
+    // Initialize default roles table
+    try {
+      await client.query(defaultRolesSchemaSQL);
+      console.log("Default roles table initialized successfully");
+    } catch (error) {
+      console.warn("Default roles table initialization warning:", error.message);
     }
 
     // Optimize chat queries

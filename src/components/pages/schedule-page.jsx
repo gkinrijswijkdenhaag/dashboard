@@ -73,11 +73,7 @@ function todayString() {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const DEFAULT_ROLE_NAMES = new Set([
-  "Voorganger", "Ouderling van dienst", "Collecte", "Preekvertaling",
-  "Muzikale begeleiding", "Muzikale bijdrage", "Voorzangers", "Lector",
-  "Beamer", "Streaming", "Geluid", "Kindernevendienst", "Ontvangstteam", "Koffiedienst",
-]);
+const DEFAULT_ROLE_NAMES = new Set();
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -88,8 +84,13 @@ export function SchedulePage() {
   const {
     assignments, loading,
     updateAssignment, updateAssignmentsForDate, saveAssignments, resetAssignments,
-    addRole, removeRole, getAssignmentsForDate,
+    addRole, removeRole, getAssignmentsForDate, defaultRoles,
   } = useAssignments();
+
+  const defaultRoleNames = useMemo(
+    () => new Set(defaultRoles.map((r) => r.role)),
+    [defaultRoles]
+  );
 
   const [emailMap, setEmailMap] = useState({});
   const [copied, setCopied] = useState(false);
@@ -770,7 +771,7 @@ export function SchedulePage() {
                       handleAddPersonToRole={handleAddPersonToRole}
                       getPeopleForRole={getPeopleForRole}
                       currentService={editingService}
-                      defaultRoleNames={DEFAULT_ROLE_NAMES}
+                      defaultRoleNames={defaultRoleNames}
                       onPersonAdded={refreshAssignablePeople}
                     />
                   </div>
@@ -784,7 +785,7 @@ export function SchedulePage() {
                       handleAddPersonToRole={handleAddPersonToRole}
                       getPeopleForRole={getPeopleForRole}
                       currentService={editingService}
-                      defaultRoleNames={DEFAULT_ROLE_NAMES}
+                      defaultRoleNames={defaultRoleNames}
                       onPersonAdded={refreshAssignablePeople}
                     />
                   </div>

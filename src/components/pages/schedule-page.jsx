@@ -98,19 +98,21 @@ export function SchedulePage() {
   const [year, setYear] = useState(() => todayUTC().getUTCFullYear());
 
   // ── Edit panel state ────────────────────────────────────────────────────
-  const [editingDate, setEditingDate] = useState(() => searchParams.get("edit") || null);
+  const [editingDate, setEditingDate] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [newRoleName, setNewRoleName] = useState("");
   const [assignablePeople, setAssignablePeople] = useState([]);
 
-  // If a date was passed via ?edit=, switch to that year automatically
+  // If a date was passed via ?edit=, store it as pending — we open the panel
+  // only AFTER the scroll has fired (see tryScroll below).
+  const pendingEditDate = useRef(null);
   useEffect(() => {
     const editDate = searchParams.get("edit");
     if (editDate) {
       const y = parseInt(editDate.slice(0, 4), 10);
       if (!isNaN(y)) setYear(y);
-      setEditingDate(editDate);
+      pendingEditDate.current = editDate;
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -212,21 +214,77 @@ export function SchedulePage() {
 
   // Ref attached to the nearest/today Sunday element; scrolled into view after load
   const nearestRef = useRef(null);
+  const tableContainerRef = useRef(null);
+  const hasScrolled = useRef(false);
+
+  // Reset hasScrolled when year or layout changes so those intentional changes re-scroll
+  useEffect(() => {
+    hasScrolled.current = false;
+  }, [year, layoutView]);
+
   useEffect(() => {
     if (loading) return;
-    const el = nearestRef.current;
-    if (!el) return;
-    const id = setTimeout(() => {
+    // Wait until assignments have actually loaded (non-empty) before measuring,
+    // so column widths are stable based on real content.
+    if (!assignments || assignments.length === 0) return;
+    if (hasScrolled.current) return;
+
+    let rafId;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 60;
+
+    const doTableScroll = () => {
+      const c = tableContainerRef.current;
+      const e = nearestRef.current;
+      if (!c || !e) return false;
+      // Measure the actual sticky Role column width (first th in the header)
+      const stickyEl = c.querySelector("thead th:first-child");
+      const stickyWidth = stickyEl ? stickyEl.getBoundingClientRect().width : 140;
+      const containerRect = c.getBoundingClientRect();
+      const elRect = e.getBoundingClientRect();
+      const targetScrollLeft = c.scrollLeft + elRect.left - containerRect.left - stickyWidth;
+      c.scrollTo({ left: Math.max(0, targetScrollLeft), behavior: "smooth" });
+      return true;
+    };
+
+    const tryScroll = () => {
+      attempts++;
+      const el = nearestRef.current;
+
       if (layoutView === "cards") {
-        // Vertical card list: center the target card (avoids sticky header overlap)
+        if (!el) {
+          if (attempts < MAX_ATTEMPTS) rafId = requestAnimationFrame(tryScroll);
+          return;
+        }
+        hasScrolled.current = true;
         el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
-      } else {
-        // Table with horizontal overflow: center the target column
-        el.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+        return;
       }
-    }, 150);
-    return () => clearTimeout(id);
-  }, [loading, layoutView, year]);
+
+      // Table mode
+      if (!doTableScroll()) {
+        if (attempts < MAX_ATTEMPTS) rafId = requestAnimationFrame(tryScroll);
+        return;
+      }
+      hasScrolled.current = true;
+
+      // Open the pending edit panel now that scroll has fired at full width
+      if (pendingEditDate.current) {
+        const dateToOpen = pendingEditDate.current;
+        pendingEditDate.current = null;
+        setEditingDate(dateToOpen);
+        // Re-scroll a few frames later in case panel renders shift geometry
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(doTableScroll);
+          });
+        });
+      }
+    };
+
+    rafId = requestAnimationFrame(tryScroll);
+    return () => cancelAnimationFrame(rafId);
+  }, [loading, assignments, layoutView, year]);
 
   // ── Handlers ────────────────────────────────────────────────────────────
 
@@ -538,7 +596,7 @@ export function SchedulePage() {
               })}
             </div>
           ) : (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-scroll overflow-y-auto max-h-[calc(100vh-260px)] pb-4 scrollbar-always-x">
+            <div ref={tableContainerRef} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-scroll overflow-y-auto max-h-[calc(100vh-260px)] pb-4 scrollbar-always-x">
               <table className="border-collapse min-w-full">
                 <thead>
                   <tr>

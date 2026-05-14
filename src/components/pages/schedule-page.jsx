@@ -73,8 +73,6 @@ function todayString() {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const DEFAULT_ROLE_NAMES = new Set();
-
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function SchedulePage() {

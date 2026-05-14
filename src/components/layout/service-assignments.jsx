@@ -7,8 +7,6 @@ import { Link } from "react-router-dom";
 import { getStatusColor } from "../../lib/date-utils";
 import { useAssignments } from "../assignments/context/AssignmentsContext";
 
-const DEFAULT_ROLE_ORDER = [];
-
 function formatDaysRemaining(days) {
   if (days === 0) return "Today";
   if (days === 1) return "Tomorrow";

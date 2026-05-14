@@ -27,8 +27,6 @@ import { getAssignablePeople } from "../../services/assignablePeopleService";
 import { DraggableRoleManager } from "./DraggableRoleManager";
 import { DraggableRoleManagerMobile } from "./DraggableRoleManagerMobile";
 
-const DEFAULT_ROLE_NAMES = new Set();
-
 export function AssignmentsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();

@@ -19,26 +19,11 @@ import {
   updateAssignablePerson,
   deleteAssignablePerson,
 } from "../../services/assignablePeopleService";
+import defaultRolesService from "../../services/defaultRolesService";
 
-const DEFAULT_ROLES = [
-  "Voorganger",
-  "Ouderling van dienst",
-  "Collecte",
-  "Preekvertaling",
-  "Muzikale begeleiding",
-  "Muzikale bijdrage",
-  "Voorzangers",
-  "Lector",
-  "Beamer",
-  "Streaming",
-  "Geluid",
-  "Kindernevendienst",
-  "Ontvangstteam",
-  "Koffiedienst",
-];
-
-export const RoleBasedPeopleManager = () => {
+export const RoleBasedPeopleManager = ({ roles: rolesProp }) => {
   const [people, setPeople] = useState([]);
+  const [roles, setRoles] = useState(rolesProp ?? []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedRoles, setExpandedRoles] = useState({});
@@ -48,15 +33,44 @@ export const RoleBasedPeopleManager = () => {
   const [savingRole, setSavingRole] = useState(null);
   const [deletingPerson, setDeletingPerson] = useState(null);
 
+  // Keep local roles in sync when parent passes updated list
+  useEffect(() => {
+    if (rolesProp) {
+      setRoles(rolesProp);
+      setExpandedRoles((prev) => {
+        const next = { ...prev };
+        rolesProp.forEach((r) => {
+          if (next[r] === undefined) next[r] = true;
+        });
+        return next;
+      });
+    }
+  }, [rolesProp]);
+
   useEffect(() => {
     fetchPeople();
-    // Expand all roles by default
-    const expanded = {};
-    DEFAULT_ROLES.forEach((role) => {
-      expanded[role] = true;
-    });
-    setExpandedRoles(expanded);
-  }, []);
+    if (!rolesProp) {
+      fetchRoles();
+    } else {
+      // Expand all when roles are provided via prop
+      const expanded = {};
+      rolesProp.forEach((role) => { expanded[role] = true; });
+      setExpandedRoles(expanded);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const fetchRoles = async () => {
+    try {
+      const data = await defaultRolesService.getDefaultRoles();
+      const names = (data || []).map((r) => r.name);
+      setRoles(names);
+      const expanded = {};
+      names.forEach((role) => { expanded[role] = true; });
+      setExpandedRoles(expanded);
+    } catch (err) {
+      console.error("Failed to load default roles", err);
+    }
+  };
 
   const fetchPeople = async () => {
     try {
@@ -201,7 +215,7 @@ export const RoleBasedPeopleManager = () => {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-slate-800">Service People</h3>
-            <p className="text-xs text-slate-400">{totalPeople} {totalPeople === 1 ? "person" : "people"} across {DEFAULT_ROLES.length} roles</p>
+            <p className="text-xs text-slate-400">{totalPeople} {totalPeople === 1 ? "person" : "people"} across {roles.length} roles</p>
           </div>
         </div>
         <button
@@ -215,7 +229,7 @@ export const RoleBasedPeopleManager = () => {
 
       {/* Role sections */}
       <div className="divide-y divide-slate-100">
-        {DEFAULT_ROLES.map((role) => {
+        {roles.map((role) => {
           const rolePeople = getPeopleForRole(role);
           const isExpanded = expandedRoles[role];
           const isAddFormOpen = showAddForm[role];
@@ -383,7 +397,7 @@ export const RoleBasedPeopleManager = () => {
 
       {/* Panel footer */}
       <div className="px-6 py-3 border-t border-slate-100 flex items-center justify-between">
-        <p className="text-xs text-slate-400">{DEFAULT_ROLES.length} service roles configured</p>
+        <p className="text-xs text-slate-400">{roles.length} service roles configured</p>
         <p className="text-xs text-slate-400">X = remove from role · <Trash2 className="w-3 h-3 inline" /> = delete person</p>
       </div>
     </div>

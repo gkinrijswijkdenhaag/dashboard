@@ -7,23 +7,6 @@ import { Link } from "react-router-dom";
 import { getStatusColor } from "../../lib/date-utils";
 import { useAssignments } from "../assignments/context/AssignmentsContext";
 
-const DEFAULT_ROLE_ORDER = [
-  "Voorganger",
-  "Ouderling van dienst",
-  "Collecte",
-  "Preekvertaling",
-  "Muzikale begeleiding",
-  "Muzikale bijdrage",
-  "Voorzangers",
-  "Lector",
-  "Beamer",
-  "Streaming",
-  "Geluid",
-  "Kindernevendienst",
-  "Ontvangstteam",
-  "Koffiedienst",
-];
-
 function formatDaysRemaining(days) {
   if (days === 0) return "Today";
   if (days === 1) return "Tomorrow";
@@ -41,7 +24,8 @@ const CARD_HEADER = (
 );
 
 export function ServiceAssignments({ selectedDate }) {
-  const { getAssignmentsForDate, loading } = useAssignments();
+  const { getAssignmentsForDate, loading, defaultRoles } = useAssignments();
+  const roleOrder = useMemo(() => defaultRoles.map((r) => r.role), [defaultRoles]);
 
   const currentService = selectedDate ? getAssignmentsForDate(selectedDate) : null;
 
@@ -50,7 +34,7 @@ export function ServiceAssignments({ selectedDate }) {
     if (!currentService) return {};
 
     // Start with all default roles so they always appear
-    const acc = Object.fromEntries(DEFAULT_ROLE_ORDER.map((r) => [r, []]));
+    const acc = Object.fromEntries(roleOrder.map((r) => [r, []]));
 
     // Merge in any roles from the stored record (including custom ones)
     for (const { role, person } of currentService.assignments) {
@@ -59,10 +43,10 @@ export function ServiceAssignments({ selectedDate }) {
     }
 
     // Return in default order first, then any custom roles appended
-    const customRoles = Object.keys(acc).filter((r) => !DEFAULT_ROLE_ORDER.includes(r));
-    const orderedKeys = [...DEFAULT_ROLE_ORDER, ...customRoles];
+    const customRoles = Object.keys(acc).filter((r) => !roleOrder.includes(r));
+    const orderedKeys = [...roleOrder, ...customRoles];
     return Object.fromEntries(orderedKeys.map((r) => [r, acc[r]]));
-  }, [currentService]);
+  }, [currentService, roleOrder]);
 
   if (loading) {
     return (

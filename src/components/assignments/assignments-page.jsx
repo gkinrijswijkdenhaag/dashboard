@@ -1,5 +1,5 @@
 // src/components/assignments/assignments-page.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
@@ -27,23 +27,6 @@ import { getAssignablePeople } from "../../services/assignablePeopleService";
 import { DraggableRoleManager } from "./DraggableRoleManager";
 import { DraggableRoleManagerMobile } from "./DraggableRoleManagerMobile";
 
-const DEFAULT_ROLE_NAMES = new Set([
-  "Voorganger",
-  "Ouderling van dienst",
-  "Collecte",
-  "Preekvertaling",
-  "Muzikale begeleiding",
-  "Muzikale bijdrage",
-  "Voorzangers",
-  "Lector",
-  "Beamer",
-  "Streaming",
-  "Geluid",
-  "Kindernevendienst",
-  "Ontvangstteam",
-  "Koffiedienst",
-]);
-
 export function AssignmentsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -68,7 +51,13 @@ export function AssignmentsPage() {
     updateAssignmentsForDate,
     saveAssignments,
     resetAssignments,
+    defaultRoles,
   } = useAssignments();
+
+  const defaultRoleNames = useMemo(
+    () => new Set(defaultRoles.map((r) => r.role)),
+    [defaultRoles]
+  );
 
   const [user] = useState(() => {
     const savedUser = localStorage.getItem("currentUser");
@@ -474,7 +463,7 @@ export function AssignmentsPage() {
                       handleAddPersonToRole={handleAddPersonToRole}
                       getPeopleForRole={getPeopleForRole}
                       currentService={currentService}
-                      defaultRoleNames={DEFAULT_ROLE_NAMES}
+                      defaultRoleNames={defaultRoleNames}
                     />
                   </div>
 
@@ -488,7 +477,7 @@ export function AssignmentsPage() {
                       handleAddPersonToRole={handleAddPersonToRole}
                       getPeopleForRole={getPeopleForRole}
                       currentService={currentService}
-                      defaultRoleNames={DEFAULT_ROLE_NAMES}
+                      defaultRoleNames={defaultRoleNames}
                     />
                   </div>
 

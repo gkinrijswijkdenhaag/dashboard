@@ -67,6 +67,7 @@ const profileRoutes = require("./routes/profile");
 const assignablePeopleRoutes = require("./routes/assignablePeople");
 const roleEmailsRoutes = require("./routes/roleEmails");
 const publicScheduleRoutes = require("./routes/publicSchedule");
+const defaultRolesRoutes = require("./routes/defaultRoles");
 
 // Use routes
 app.use("/api/auth", authRoutes); // loginLimiter is applied inside the auth router
@@ -86,6 +87,7 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/assignable-people", assignablePeopleRoutes);
 app.use("/api/role-emails", roleEmailsRoutes);
 app.use("/api/public/schedule", publicScheduleRoutes);
+app.use("/api/default-roles", defaultRolesRoutes);
 
 // Default route
 app.get("/", (req, res) => {

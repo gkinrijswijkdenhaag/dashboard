@@ -1,29 +1,12 @@
 // src/components/assignments/context/AssignmentsContext.jsx
-import { createContext, useState, useContext, useEffect } from "react";
+import { createContext, useState, useContext, useEffect, useRef } from "react";
 import { getUpcomingSundays } from "../../../lib/date-utils";
 import * as assignmentsService from "../../../services/assignmentsService";
+import defaultRolesService from "../../../services/defaultRolesService";
 
 const AssignmentsContext = createContext();
 
 export const useAssignments = () => useContext(AssignmentsContext);
-
-// Default church service roles in Dutch as requested by user
-const DEFAULT_ROLES = [
-  { role: "Voorganger", person: "" },
-  { role: "Ouderling van dienst", person: "" },
-  { role: "Collecte", person: "" },
-  { role: "Preekvertaling", person: "" },
-  { role: "Muzikale begeleiding", person: "" },
-  { role: "Muzikale bijdrage", person: "" },
-  { role: "Voorzangers", person: "" },
-  { role: "Lector", person: "" },
-  { role: "Beamer", person: "" },
-  { role: "Streaming", person: "" },
-  { role: "Geluid", person: "" },
-  { role: "Kindernevendienst", person: "" },
-  { role: "Ontvangstteam", person: "" },
-  { role: "Koffiedienst", person: "" },
-];
 
 // --- Pure module-level helpers (no state dependencies) ---
 
@@ -43,7 +26,8 @@ const computeDaysRemaining = (dateString) => {
   return Math.ceil((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 };
 
-const createServiceObject = (dateString, assignments = [...DEFAULT_ROLES]) => {
+const createServiceObject = (dateString, assignments) => {
+  if (!assignments) assignments = [];
   const date = new Date(dateString + "T00:00:00Z");
   const daysRemaining = computeDaysRemaining(dateString);
   return {
@@ -56,7 +40,7 @@ const createServiceObject = (dateString, assignments = [...DEFAULT_ROLES]) => {
   };
 };
 
-const mergeWithDefaultRoles = (savedAssignments) => {
+const mergeWithDefaultRoles = (savedAssignments, defaultRolesParam) => {
   // Build a map of role -> saved entries for quick lookup
   const savedByRole = new Map();
   for (const entry of savedAssignments) {
@@ -65,7 +49,7 @@ const mergeWithDefaultRoles = (savedAssignments) => {
   }
 
   // Always start with all default roles in order
-  const merged = DEFAULT_ROLES.map(({ role }) => {
+  const merged = defaultRolesParam.map(({ role }) => {
     const saved = savedByRole.get(role);
     if (saved && saved.length > 0) {
       savedByRole.delete(role); // consumed
@@ -82,7 +66,7 @@ const mergeWithDefaultRoles = (savedAssignments) => {
   return merged;
 };
 
-const transformBackendData = (backendData) => {
+const transformBackendData = (backendData, defaultRolesParam) => {
   const groupedByDate = backendData.reduce((acc, item) => {
     if (!acc[item.dateString]) {
       acc[item.dateString] = { dateString: item.dateString, assignments: [] };
@@ -95,7 +79,7 @@ const transformBackendData = (backendData) => {
 
   return Object.values(groupedByDate)
     .map(({ dateString, assignments }) =>
-      createServiceObject(dateString, mergeWithDefaultRoles(assignments))
+      createServiceObject(dateString, mergeWithDefaultRoles(assignments, defaultRolesParam))
     )
     .sort((a, b) => new Date(a.dateString) - new Date(b.dateString));
 };
@@ -104,29 +88,40 @@ export const AssignmentsProvider = ({ children }) => {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Role-person entries fetched from DB; empty until the fetch resolves
+  const [rolePersonEntries, setRolePersonEntries] = useState([]);
+  const rolePersonEntriesRef = useRef([]);
 
   // Load assignments from backend on component mount
   useEffect(() => {
-    // Check authentication and load assignments
-    const checkAuthAndLoad = () => {
+    // Fetch roles first, then assignments — order matters for transform
+    const init = async () => {
+      try {
+        const data = await defaultRolesService.getDefaultRoles();
+        if (data && data.length > 0) {
+          const entries = data.map((r) => ({ role: r.name, person: "" }));
+          rolePersonEntriesRef.current = entries;
+          setRolePersonEntries(entries);
+        }
+      } catch (err) {
+        console.warn("Could not fetch default roles, using fallback", err);
+      }
+
       if (isAuthenticated()) {
         loadAssignments();
       } else {
-        setLoading(false); // Stop loading if not authenticated
+        setLoading(false);
       }
     };
 
-    // Initial check
-    checkAuthAndLoad();
+    init();
 
     // Listen for storage changes (when user logs in/out)
     const handleStorageChange = (e) => {
       if (e.key === "currentUser") {
         if (e.newValue) {
-          // User logged in
-          checkAuthAndLoad();
+          loadAssignments();
         } else {
-          // User logged out
           setAssignments([]);
           setLoading(false);
           setError(null);
@@ -136,7 +131,7 @@ export const AssignmentsProvider = ({ children }) => {
 
     // Listen for a custom event that we can trigger from the same tab
     const handleAuthChange = () => {
-      checkAuthAndLoad();
+      if (isAuthenticated()) loadAssignments();
     };
 
     window.addEventListener("storage", handleStorageChange);
@@ -163,7 +158,7 @@ export const AssignmentsProvider = ({ children }) => {
 
       if (data && data.length > 0) {
         // Transform backend data to frontend format
-        const transformedAssignments = transformBackendData(data);
+        const transformedAssignments = transformBackendData(data, rolePersonEntriesRef.current);
         setAssignments(transformedAssignments);
       } else {
         // No data in database - just set empty assignments
@@ -195,8 +190,8 @@ export const AssignmentsProvider = ({ children }) => {
         });
       }
 
-      // Service doesn't exist — create it with default roles then apply the update
-      const newAssignments = [...DEFAULT_ROLES];
+      // Service doesn't exist — create it with role-person entries then apply the update
+      const newAssignments = [...rolePersonEntriesRef.current];
       if (newAssignments[roleIndex]) {
         newAssignments[roleIndex] = { ...newAssignments[roleIndex], person: newPerson };
       }
@@ -224,8 +219,8 @@ export const AssignmentsProvider = ({ children }) => {
         );
       }
 
-      // Service doesn't exist — create it with default roles + new role
-      const newService = createServiceObject(dateString, [...DEFAULT_ROLES, newEntry]);
+      // Service doesn't exist — create it with role-person entries + new role
+      const newService = createServiceObject(dateString, [...rolePersonEntriesRef.current, newEntry]);
       return [...prevAssignments, newService].sort(
         (a, b) => new Date(a.dateString) - new Date(b.dateString)
       );
@@ -246,7 +241,7 @@ export const AssignmentsProvider = ({ children }) => {
   // Function to get assignments for a specific date
   const getAssignmentsForDate = (dateString) => {
     if (!dateString) return null;
-    return assignments.find((s) => s.dateString === dateString) ?? createServiceObject(dateString);
+    return assignments.find((s) => s.dateString === dateString) ?? createServiceObject(dateString, [...rolePersonEntriesRef.current]);
   };
 
   // Function to add more future dates
@@ -268,7 +263,7 @@ export const AssignmentsProvider = ({ children }) => {
         const sunday = new Date(nextDate);
         sunday.setDate(nextDate.getDate() + i * 7);
         const dateString = `${sunday.getFullYear()}-${String(sunday.getMonth() + 1).padStart(2, "0")}-${String(sunday.getDate()).padStart(2, "0")}`;
-        newSundays.push(createServiceObject(dateString));
+        newSundays.push(createServiceObject(dateString, [...rolePersonEntriesRef.current]));
       }
 
       // Add the new services to our assignments
@@ -333,7 +328,7 @@ export const AssignmentsProvider = ({ children }) => {
       const exists = assignments.some((service) => service.dateString === dateString);
       if (exists) return;
 
-      const newService = createServiceObject(dateString);
+      const newService = createServiceObject(dateString, [...rolePersonEntriesRef.current]);
 
       setAssignments((prev) =>
         [...prev, newService].sort((a, b) => new Date(a.dateString) - new Date(b.dateString))
@@ -368,7 +363,7 @@ export const AssignmentsProvider = ({ children }) => {
       const resetData = sundays.map((sunday) => ({
         ...sunday,
         title: "Sunday Service",
-        assignments: [...DEFAULT_ROLES],
+        assignments: [...rolePersonEntriesRef.current],
       }));
 
       setAssignments(resetData);
@@ -410,7 +405,7 @@ export const AssignmentsProvider = ({ children }) => {
     resetAssignments,
     loadAssignments,
     isAuthenticated,
-    defaultRoles: DEFAULT_ROLES,
+    defaultRoles: rolePersonEntries,
   };
 
   return (

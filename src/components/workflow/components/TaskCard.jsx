@@ -152,6 +152,7 @@ export const TaskCard = ({ task, categoryId }) => {
     handleTranslateSermon,
     handleUploadSermon,
     handleUploadSlides,
+    handleUploadAnnouncement,
     handleUploadMusic,
     handleEditDocumentLink,
     loadingStates,
@@ -784,6 +785,44 @@ export const TaskCard = ({ task, categoryId }) => {
                   size="sm"
                   className={`w-full border text-xs py-1.5 h-9 rounded-md font-medium hover:shadow transition-all border-gray-300 text-gray-700 hover:bg-gray-50`}
                   onClick={() => handleEditDocumentLink("slides")}
+                >
+                  <Link className="w-3 h-3 mr-1" />
+                  Edit Link
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Announcement link task */}
+        {task.id === "announcement" && (
+          <>
+            {!isCompleted && (
+              <Button
+                size="sm"
+                className={primaryButtonClass}
+                onClick={handleUploadAnnouncement}
+              >
+                <Upload className="w-3 h-3 mr-1" />
+                Add Link
+              </Button>
+            )}
+
+            {isCompleted && (
+              <div className="space-y-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className={viewButtonClass}
+                  onClick={() => handleViewDocument("announcement")}
+                >
+                  View Announcement
+                </Button>
+
+                <Button
+                  size="sm"
+                  className={`w-full border text-xs py-1.5 h-9 rounded-md font-medium hover:shadow transition-all border-gray-300 text-gray-700 hover:bg-gray-50`}
+                  onClick={() => handleEditDocumentLink("announcement")}
                 >
                   <Link className="w-3 h-3 mr-1" />
                   Edit Link

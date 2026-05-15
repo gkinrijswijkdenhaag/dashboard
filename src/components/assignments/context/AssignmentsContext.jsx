@@ -96,6 +96,11 @@ export const AssignmentsProvider = ({ children }) => {
   useEffect(() => {
     // Fetch roles first, then assignments — order matters for transform
     const init = async () => {
+      if (!isAuthenticated()) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const data = await defaultRolesService.getDefaultRoles();
         if (data && data.length > 0) {
@@ -107,20 +112,31 @@ export const AssignmentsProvider = ({ children }) => {
         console.warn("Could not fetch default roles, using fallback", err);
       }
 
-      if (isAuthenticated()) {
-        loadAssignments();
-      } else {
-        setLoading(false);
-      }
+      loadAssignments();
     };
 
     init();
+
+    // Fetch roles then assignments after login
+    const initAfterLogin = async () => {
+      try {
+        const data = await defaultRolesService.getDefaultRoles();
+        if (data && data.length > 0) {
+          const entries = data.map((r) => ({ role: r.name, person: "" }));
+          rolePersonEntriesRef.current = entries;
+          setRolePersonEntries(entries);
+        }
+      } catch (err) {
+        console.warn("Could not fetch default roles, using fallback", err);
+      }
+      loadAssignments();
+    };
 
     // Listen for storage changes (when user logs in/out)
     const handleStorageChange = (e) => {
       if (e.key === "currentUser") {
         if (e.newValue) {
-          loadAssignments();
+          initAfterLogin();
         } else {
           setAssignments([]);
           setLoading(false);
@@ -131,7 +147,7 @@ export const AssignmentsProvider = ({ children }) => {
 
     // Listen for a custom event that we can trigger from the same tab
     const handleAuthChange = () => {
-      if (isAuthenticated()) loadAssignments();
+      if (isAuthenticated()) initAfterLogin();
     };
 
     window.addEventListener("storage", handleStorageChange);

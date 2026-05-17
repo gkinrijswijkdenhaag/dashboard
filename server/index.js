@@ -5,8 +5,10 @@ const dotenv = require("dotenv");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const http = require("http");
+const https = require("https");
 const socketIo = require("socket.io");
 const rateLimit = require("express-rate-limit");
+const cron = require("node-cron");
 const config = require("./config/config");
 
 // Load environment variables
@@ -231,6 +233,22 @@ initializeDatabase()
     server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
+
+    cron.schedule("*/2 * * * *", () => {
+      const timestamp = new Date().toISOString();
+      https
+        .get("https://zeghetmaar.onrender.com", (res) => {
+          console.log(
+            `[${timestamp}] [PING] zeghetmaar.onrender.com responded with status ${res.statusCode}`
+          );
+          // Consume response to free up socket
+          res.resume();
+        })
+        .on("error", (err) => {
+          console.error(`[${timestamp}] [PING] zeghetmaar.onrender.com request failed: ${err.message}`);
+        });
+    });
+    console.log("Scheduled ping to zeghetmaar.onrender.com every 2 minutes");
   })
   .catch((err) => {
     console.error("Failed to initialize database:", err);

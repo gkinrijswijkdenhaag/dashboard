@@ -46,19 +46,19 @@ Both processes must run simultaneously during development.
 
 ## Deployment
 - **Frontend**: Render (static site, serves `dist/` from `npm run build`)
-- **Backend**: Railway (Node.js service, runs `node index.js`)
-- **Database**: PostgreSQL on Railway (same project as backend)
+- **Backend**: Render (Node.js service, runs `node index.js`)
+- **Database**: PostgreSQL on Render (same project as backend)
 
-Set `VITE_API_URL` in Render's environment to the Railway backend URL. Set `ALLOWED_ORIGINS` on Railway to the Render frontend URL.
+Set `VITE_API_URL` in Render's environment to the Render backend URL. Set `ALLOWED_ORIGINS` on Render to the Render frontend URL.
 
 ## Environment Variables
 **Frontend** (root `.env`): `VITE_API_URL` (defaults to `http://localhost:5000/api`)  
-**Backend** (`server/.env` or Railway env vars): `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRATION`, `PORT`, `ALLOWED_ORIGINS`, `NODE_ENV`
+**Backend** (`server/.env` or Render env vars): `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRATION`, `PORT`, `ALLOWED_ORIGINS`, `NODE_ENV`
 
 Frontend env is accessed via `src/config/env.js` — never use `import.meta.env` directly in components.
 
 ## Database
-- Connects via `DATABASE_URL` (Railway provides this automatically for linked PostgreSQL services); SSL auto-enabled when `NODE_ENV=production` or the URL contains `render.com`
+- Connects via `DATABASE_URL` (Render provides this automatically for linked PostgreSQL services); SSL auto-enabled when `NODE_ENV=production` or the URL contains `render.com`
 - Schema is defined across multiple SQL files in `server/db/` and auto-applied on startup via `server/db/init.js`
 - Migrations are standalone scripts (e.g., `migrate_email_history.js`) referenced in `init.js`
 - To add a new table: create a `*_schema.sql` file and register it in `initializeDatabase()`

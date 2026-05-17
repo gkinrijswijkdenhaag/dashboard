@@ -27,7 +27,7 @@ The dashboard provides a centralized workspace for six service roles — liturgy
 
 - **Frontend** — React 19, Vite, Tailwind CSS 4
 - **Backend** — Express 5, Socket.IO, PostgreSQL
-- **Deployment** — Frontend on Render, backend and database on Railway
+- **Deployment** — All is deployed on Render
 
 ## Development
 
